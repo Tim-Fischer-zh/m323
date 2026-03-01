@@ -2,4 +2,6 @@
 */obj
 /.claude
 **.DS_Store
+
+# Data ist zu gross und muss deshalb ausgelassen werden
 */data
