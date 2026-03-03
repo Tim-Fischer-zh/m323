@@ -1,6 +1,6 @@
-﻿
+﻿open FSharp.Data
+open System
 
-open FSharp.Data
 let onehot label = Array.init 10 (fun i -> if i = label then 1.0 else 0.0) 
 
 let readAndNormalizeData (filename: string) =
@@ -19,5 +19,9 @@ let readAndNormalizeData (filename: string) =
     
 let data = readAndNormalizeData "/Users/tim/Documents/GitHub/m323/MNIST_regression/data/mnist_test.csv"  
 
+let rnd = new Random()
 
-printfn "%A" data[0..5]
+// let b1: obj array = Array.zeroCreate 128
+// let W1 = Array2D.init 128 784 (fun i -> rnd.NextDouble() * Math.Sqrt(2.0 / 784.0)) 
+// let W2 = Array2D.init 128 784 (fun i -> rnd.NextDouble() * Math.Sqrt(2.0 / 128.0)) 
+// let b2: obj array = Array.zeroCreate 10
