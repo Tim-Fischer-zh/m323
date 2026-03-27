@@ -3,7 +3,6 @@ open System
 let rnd = new Random()
 
 let onehot label = Array.init 10 (fun i -> if i = label then 1.0 else 0.0) 
-
 let readAndNormalizeData (filename: string) =
     //file einlesen
     let file = CsvFile.Load(filename)
@@ -44,10 +43,22 @@ let matVecMul (W: float[,]) (x: float array) : float array =
 
 let vecAdd (a: float array) (b: float array) : float array= 
     Array.map2 (fun x y  -> x + y) a b
-
+let vecSub (a: float array) (b: float array) : float array= 
+    Array.map2 (fun x y  -> x - y) a b
+let matTransVecMul (W: float[,]) (x: float array) : float array =
+    let cols = Array2D.length2 W 
+    let rows = Array2D.length1 W
+    Array.init cols (fun i -> 
+        Array.init rows (fun j -> W.[j,i] * x.[j])
+        |> Array.sum
+    )
+let vecMul (a: float array) (b: float array) : float array= 
+    Array.map2 (fun x y  -> x * y) a b
 let relu (a: float array) = 
     Array.map (fun i -> if i < 0.0 then 0.0 else i) a
 
+let reluDerivative (a: float array) = 
+    Array.map (fun i -> if i < 0.0 then 0.0 else 1.0) a
 let softmax (z: float array) = 
     let maxZ = Array.max z
     let expZ = Array.map (fun j -> exp(j - maxZ)) z 
@@ -58,3 +69,26 @@ let softmax (z: float array) =
 let loss (yHat: float array) (label: float array) : float =
         let i = Array.findIndex(fun x -> x = 1.0 ) label
         - Math.Log(yHat[i])
+
+let backpropagation (yHat: float array) (y: float array) =
+    vecSub yHat y 
+
+let outerProduct (a: float array) (b: float array) : float[,] =
+    Array2D.init (Array.length a) (Array.length b) (fun i j -> a.[i] * b.[j])
+
+
+
+
+let z1 = matVecMul W1 pixels |> vecAdd b1   
+let a1 = relu z1
+let z2 = matVecMul W2 a1 |> vecAdd b2
+let yHat = softmax z2
+
+let delta2 = vecSub yHat labels
+let dW2 = outerProduct delta2 a1
+let db2 = delta2
+let W2T = matTransVecMul W2 delta2
+let g = reluDerivative z1
+let delta1 = vecMul W2T g 
+let dW1 = outerProduct delta1 pixels
+let db1 = delta1
