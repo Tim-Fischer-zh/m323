@@ -34,11 +34,6 @@ let b1: float array = Array.zeroCreate 128
 let W2 = Array2D.init 10 128 (fun i j -> normalDistribution rnd * Math.Sqrt(2.0 / 128.0)) 
 let b2: float array = Array.zeroCreate 10
 
-// 1. matVecMul    — W · x done 
-// 2. vecAdd       — z + b done 
-// 3. relu         — g(z) für Hidden Layer done 
-// 4. softmax      — g(z) für Output Layer done 
-
 let matVecMul (W: float[,]) (x: float array) : float array =
     let rows = Array2D.length1 W
     let cols = Array2D.length2 W
@@ -60,4 +55,6 @@ let softmax (z: float array) =
     let result = Array.map (fun i -> i / sumExp) expZ 
     result
     
-
+let loss (yHat: float array) (label: float array) : float =
+        let i = Array.findIndex(fun x -> x = 1.0 ) label
+        - Math.Log(yHat[i])
