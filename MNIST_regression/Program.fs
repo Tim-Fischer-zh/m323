@@ -17,8 +17,7 @@ let readAndNormalizeData (filename: string) =
     |> Seq.toArray
 let data: (float array * float array) array = readAndNormalizeData "/Users/tim/Documents/repos/m323/MNIST_regression/data/mnist_train.csv"  
 
-let labels = fst data.[0]
-let pixels = snd data.[0]
+
 
 let normalDistribution (rnd: Random) = 
      let u1 = rnd.NextDouble()
@@ -54,6 +53,13 @@ let matTransVecMul (W: float[,]) (x: float array) : float array =
     )
 let vecMul (a: float array) (b: float array) : float array= 
     Array.map2 (fun x y  -> x * y) a b
+
+let matScale (alpha: float) (M: float[,]) : float[,] =
+    Array2D.init (Array2D.length1 M) (Array2D.length2 M) (fun i j -> alpha * M.[i, j])
+
+let matSub (A: float[,]) (B: float[,]) : float[,] =
+    Array2D.init (Array2D.length1 A) (Array2D.length2 A) (fun i j -> A.[i, j] - B.[i, j])
+
 let relu (a: float array) = 
     Array.map (fun i -> if i < 0.0 then 0.0 else i) a
 
@@ -70,8 +76,6 @@ let loss (yHat: float array) (label: float array) : float =
         let i = Array.findIndex(fun x -> x = 1.0 ) label
         - Math.Log(yHat[i])
 
-let backpropagation (yHat: float array) (y: float array) =
-    vecSub yHat y 
 
 let outerProduct (a: float array) (b: float array) : float[,] =
     Array2D.init (Array.length a) (Array.length b) (fun i j -> a.[i] * b.[j])
@@ -79,16 +83,56 @@ let outerProduct (a: float array) (b: float array) : float[,] =
 
 
 
-let z1 = matVecMul W1 pixels |> vecAdd b1   
-let a1 = relu z1
-let z2 = matVecMul W2 a1 |> vecAdd b2
-let yHat = softmax z2
+let alpha = 0.001
 
-let delta2 = vecSub yHat labels
-let dW2 = outerProduct delta2 a1
-let db2 = delta2
-let W2T = matTransVecMul W2 delta2
-let g = reluDerivative z1
-let delta1 = vecMul W2T g 
-let dW1 = outerProduct delta1 pixels
-let db1 = delta1
+
+
+
+
+
+let trainstep (W1, b1, W2, b2) (label, pixels) =
+    //forward
+    let z1 = matVecMul W1 pixels |> vecAdd b1   
+    let a1 = relu z1
+    let z2 = matVecMul W2 a1 |> vecAdd b2
+    let yHat = softmax z2
+    //backwards
+    let delta2 = vecSub yHat label
+    let dW2 = outerProduct delta2 a1
+    let db2 = delta2
+
+    let W2T = matTransVecMul W2 delta2
+    let g = reluDerivative z1
+
+    let delta1 = vecMul W2T g 
+    let dW1 = outerProduct delta1 pixels
+    let db1 = delta1
+
+    //update
+    let b1New: float array = vecSub b1 (Array.map (fun x -> x * alpha) db1)
+    let b2New: float array = vecSub b2 (Array.map (fun x -> x * alpha) db2)
+
+    let W1New = matSub W1 (matScale alpha dW1)
+    let W2New = matSub W2 (matScale alpha dW2)
+
+    W1New, b1New, W2New, b2New 
+    
+
+//rekursion 
+let rec train  (W1, b1, W2, b2) epoch = 
+    if epoch = 0 then (W1, b1, W2, b2)
+    else 
+        let W1New, b1New, W2New, b2New = Array.fold trainstep (W1, b1, W2, b2) data //[1..99] falls training zu lange geht, dataset verkürzen
+
+
+        let label, pixels = data.[0]
+        let z1 = matVecMul W1New pixels |> vecAdd b1New
+        let a1 = relu z1
+        let z2 = matVecMul W2New a1 |> vecAdd b2New
+        let yHat = softmax z2
+
+        printfn "Epoch %d  Loss: %f" epoch (loss yHat label)
+        train (W1New, b1New, W2New, b2New) (epoch - 1)
+
+let W1Final, b1Final, W2Final, b2Final = train  (W1, b1, W2, b2) 3
+
