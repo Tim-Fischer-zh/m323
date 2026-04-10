@@ -120,8 +120,9 @@ let trainstep (W1, b1, W2, b2) (label, pixels) =
 
 //rekursion 
 let rec train  (W1, b1, W2, b2) epoch = 
-    if epoch = 0 then (W1, b1, W2, b2)
-    else 
+    match epoch with
+    | 0 ->  (W1, b1, W2, b2)
+    | n ->  
         let W1New, b1New, W2New, b2New = Array.fold trainstep (W1, b1, W2, b2) data // [0..990] hinzufügen für kurze training sessions wenn es zu lange braucht
         let label, pixels = data.[0]
         let z1 = matVecMul W1New pixels |> vecAdd b1New
