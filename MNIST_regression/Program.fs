@@ -10,7 +10,7 @@ let readAndNormalizeData (filename: string) =
     file.Rows
     //einzelne row die labels und pixels(values) trennen
     |> Seq.map (fun row -> 
-        let label =int row.Columns.[0]
+        let label = int row.Columns.[0]
         //pixel normalisieren 
         let pixels = row.Columns[1..]|> Array.map (fun p -> float p / 255.0)
         onehot label, pixels)
@@ -122,9 +122,7 @@ let trainstep (W1, b1, W2, b2) (label, pixels) =
 let rec train  (W1, b1, W2, b2) epoch = 
     if epoch = 0 then (W1, b1, W2, b2)
     else 
-        let W1New, b1New, W2New, b2New = Array.fold trainstep (W1, b1, W2, b2) data //[1..99] falls training zu lange geht, dataset verkürzen
-
-
+        let W1New, b1New, W2New, b2New = Array.fold trainstep (W1, b1, W2, b2) data // [0..990] hinzufügen für kurze training sessions wenn es zu lange braucht
         let label, pixels = data.[0]
         let z1 = matVecMul W1New pixels |> vecAdd b1New
         let a1 = relu z1
@@ -134,5 +132,21 @@ let rec train  (W1, b1, W2, b2) epoch =
         printfn "Epoch %d  Loss: %f" epoch (loss yHat label)
         train (W1New, b1New, W2New, b2New) (epoch - 1)
 
-let W1Final, b1Final, W2Final, b2Final = train  (W1, b1, W2, b2) 3
+let W1Final, b1Final, W2Final, b2Final = train  (W1, b1, W2, b2) 3 //3 Epochen brauchen ca 10 minuten trainieren
 
+let predict (W1, b1, W2, b2) pixels = 
+    let z1 = matVecMul W1 pixels |> vecAdd b1
+    let a1 = relu(z1)
+    let z2 = matVecMul W2 a1 |> vecAdd b2
+    let yhat = softmax(z2)
+    Array.findIndex (fun x -> x = Array.max yhat) yhat
+
+let testdata: (float array * float array) array = readAndNormalizeData "/Users/tim/Documents/repos/m323/MNIST_regression/data/mnist_test.csv"  
+let correct = 
+    testdata
+    |> Array.filter (fun (label, pixels) ->
+        let prediction = predict (W1Final, b1Final, W2Final, b2Final) pixels
+        let trueLabel = Array.findIndex (fun x -> x = 1.0) label
+        prediction = trueLabel)
+    |> Array.length 
+printfn "Accuracy: %A" (float correct / float testdata.Length * 100.0)
