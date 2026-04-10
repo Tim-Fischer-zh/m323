@@ -123,7 +123,7 @@ let rec train  (W1, b1, W2, b2) epoch =
     match epoch with
     | 0 ->  (W1, b1, W2, b2)
     | n ->  
-        let W1New, b1New, W2New, b2New = Array.fold trainstep (W1, b1, W2, b2) data // [0..990] hinzufügen für kurze training sessions wenn es zu lange braucht
+        let W1New, b1New, W2New, b2New = Array.fold trainstep (W1, b1, W2, b2) data
         let label, pixels = data.[0]
         let z1 = matVecMul W1New pixels |> vecAdd b1New
         let a1 = relu z1
@@ -133,7 +133,7 @@ let rec train  (W1, b1, W2, b2) epoch =
         printfn "Epoch %d  Loss: %f" epoch (loss yHat label)
         train (W1New, b1New, W2New, b2New) (epoch - 1)
 
-let W1Final, b1Final, W2Final, b2Final = train  (W1, b1, W2, b2) 3 //3 Epochen brauchen ca 10 minuten trainieren
+let W1Final, b1Final, W2Final, b2Final = train  (W1, b1, W2, b2) 5 //3 Epochen brauchen ca 10 minuten trainieren
 
 let predict (W1, b1, W2, b2) pixels = 
     let z1 = matVecMul W1 pixels |> vecAdd b1
